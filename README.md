@@ -1,0 +1,5 @@
+Esse sistema, inicialmente, foi desenvolvimento para substituir uma planilha do excel com mais de 1000 linhas. Essa planilha oferecia ao seu usuário a opção de armazenar, editar e remover qualquer item (como em qualquer outra planilha do Excel). Entretanto, isso ocorria de forma lenta em minha máquina de trabalho.git Além disso, por ser armazenada em um servidor local, não podia ter alterações simultañeas. Daí veio a ideia de passar tudo isso para uma página web.
+
+Esse pequeno e simples código, utiliza o Boostrap para o front-end e o PHP para o back-end. Caso deseje, poderá baixar e subir um servidor nginx diretamente pelo Docker-Compose disponibilizado. Por comodidade, utilizei o MySQL para armazenar os dados. Há exatas 2 tabelas, uma para armazenar o nome da empresa, número, operadora, servidor e status (Ativo, Suspenso ou Cancelado) e a outra para armazenar os links.
+
+Farei o possível para não quebrar o que funciona quando for subir algo, mas caso ocorra, informarei o que exatamente mudará (de forma detalhada).

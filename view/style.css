@@ -1,0 +1,22 @@
+.footer {
+    position: fixed !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    color: white !important;
+    text-align: center !important;
+}
+
+.collapse1 {
+    overflow-y: scroll !important;
+    height: 700px !important;
+    padding-bottom: 20px !important;
+}
+
+.alert {
+    display: none;
+}
+
+body a {
+    text-decoration: none;
+}
