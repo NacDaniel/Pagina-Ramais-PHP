@@ -1,7 +1,7 @@
 <?php
 
 namespace Model;
-require "exceptions/database/connectionTimeout.php";
+require dirname(__FILE__, 2) . "/exceptions/database/connectionTimeout.php";
 use Exceptions\database\connectionTimeout as dbTimeout;
 
 
@@ -13,7 +13,7 @@ $passDatabase = getenv('mysql_password');
 // Não tenho o mysqli :/
 class mysqli
 {
-    public $affected_rows = 0;
+    public $affected_rows = 1;
     public $error;
     public function __construct($host, $user, $password)
     {
@@ -36,15 +36,48 @@ class mysqli
     {
         return $string;
     }
+
+    public function close()
+    {
+        return;
+    }
 }
 
-/*Não esquecer de deletar a classe mysqli*/ 
+/*Não esquecer de deletar a classe mysqli*/
 
 class numeroModel
 {
+
+    private static $instance = null;
     private $instanceDatabase;
     private $linkList;
     private $numberList;
+
+    public static function getInstance()
+    {
+        if (is_null(self::$instance)) {
+            self::$instance = new numeroModel();
+        }
+        return self::$instance;
+    }
+
+    public static function deleteInstance()
+    {
+        if (is_null(self::$instance)) {
+            return;
+        }
+        if (is_null(self::$instanceDatabase)) {
+            return;
+        }
+        self::$instanceDatabase->close();
+        self::$instance = null;
+    }
+
+    public function close_database()
+    {
+
+    }
+
     public function init_database()
     {
         global $hostDatabase;
@@ -81,17 +114,19 @@ class numeroModel
         if (!$this->instanceDatabase->query($query)) {
             throw new dbTimeout("Falha ao deletar o ID $ID");
         }
+
+        return true;
     }
 
     function updateNumber($ID, $values)
     {
         $this->getInstance_selectDB();
         $query = "UPDATE numeros SET ";
-        $i = 1;
+        $i = 0;
         $listToSQL = [];
         foreach ($values as $k => $v) {
             $i++;
-            if ($i != count($values)) {
+            if ($i - 1 != count($values) && $i != 1) {
                 $query .= ", ";
             }
             $query .= "$k = %s";
@@ -103,8 +138,36 @@ class numeroModel
         $query = sprintf($query, ...$listToSQL);
         $this->instanceDatabase->query($query);
         if ($this->instanceDatabase->affected_rows < 1) {
-            throw new dbTimeout("Não foi possível encontrar o item. O mesmo não foi atualizado.");
+            throw new dbTimeout("Não foi possível encontrar o item. O mesmo não foi atualizado. ");
         }
+
+        return true;
+    }
+
+    function updateLink($name, $values)
+    {
+        $this->getInstance_selectDB();
+        $query = "UPDATE links SET ";
+        $i = 0;
+        $listToSQL = [];
+        foreach ($values as $k => $v) {
+            $i++;
+            if ($i - 1 != count($values) && $i != 1) {
+                $query .= ", ";
+            }
+            $query .= "$k = %s";
+            array_push($listToSQL, $v);
+        }
+
+        $query .= " WHERE ID=%s";
+        array_push($listToSQL, $name);
+        $query = sprintf($query, ...$listToSQL);
+        $this->instanceDatabase->query($query);
+        if ($this->instanceDatabase->affected_rows < 1) {
+            throw new dbTimeout("Não foi possível encontrar o link. O mesmo não foi atualizado. ");
+        }
+
+        return true;
     }
 
     public function insertFirstLink()
@@ -199,17 +262,20 @@ class numeroModel
         if (!$this->instanceDatabase->query($query)) {
             throw new dbTimeout("Falha ao obter os números cadastrados.");
         }
+        return [["id" => 1, "number" => 1234, "name" => "aaa"]];
     }
+
 
     public function getLinks($where = "")
     {
-        $query = "";
+        $query = "SELECT * FROM links";
         if ($where != "") {
             $query .= " " . $where;
         }
         if (!$this->instanceDatabase->query($query)) {
-            throw new dbTimeout("Falha ao obter os números cadastrados.");
+            throw new dbTimeout("Falha ao obter os links cadastrados.");
         }
+        return [["nome" => "Daniel Teste", "link" => "aaa"]];
     }
 
     private function replace_list($name, $array)
@@ -220,4 +286,6 @@ class numeroModel
             $this->linkList = is_array($array) ? $array : [];
         }
     }
+
+
 }

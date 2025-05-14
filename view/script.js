@@ -121,13 +121,18 @@ $("#salvar").on("click", function () {
     }
     // console.log(listaToServer)
     $.ajax({
-        url: "requests.php",
+        accepts: 'application/json',
         type: "POST",
-        data: 'data=' + JSON.stringify(listaToServer),
-        //data: "data=" + JSON.parse(listaToServer),
         dataType: "JSON",
+        url: "controller/numeroController.php",
+        statusCode: {
+            404: function () {
+                myAlertBottom("Página não encontrada");
+            },
+        },
         async: true,
-
+        //data: "data=" + JSON.parse(listaToServer),
+        data: 'data=' + JSON.stringify(listaToServer),
     }).done(function (resposta) {
         if (resposta["code"] == 2002) {
             exito = resposta.data.numerosExito
@@ -141,19 +146,14 @@ $("#salvar").on("click", function () {
             setTimeout(function () {
                 updateListClient()
             }, 500)
-        } else if (resposta["code"] == 2002.2) {
-            myAlertTop("Número atualizado com sucesso.")
+        } else if (resposta.code == 201) {
+            myAlertTop(resposta.message)
             setTimeout(function () {
                 updateListClient()
             }, 500)
-        } else if (getValidadores(listaToServer, resposta["code"])) {
-            return
         }
     }).fail(function (jqXHR, textStatus) {
-        console.log("Request failed: " + textStatus);
-
-    }).always(function () {
-        console.log("completou add");
+        messageErroRequest(jqXHR, textStatus)
     });
 })
 
@@ -235,29 +235,46 @@ $(".remover").on("click", function () {
         checkbox.each(function (index, value) {
             painho = value.parentNode.parentNode.parentNode
             $.ajax({
-                url: "requests.php",
+                accepts: 'application/json',
                 type: "POST",
-                data: "id=" + painho.getAttribute("id"),
-                dataType: "JSON"
-            }).done(function (resposta) {
-                if (resposta["code"] == 200) {
-                    $(painho).empty();
-                    myAlertTop("Número deletado com sucesso.")
-                    updateListClient($("#filterInput").val())
-                } else if (getValidadores(null, resposta["code"])) {
-                    return
+                dataType: "JSON",
+                url: "controller/numeroController.php",
+                data: {
+                    id: painho.getAttribute("id")
+                },
+                statusCode: {
+                    404: function () {
+                        myAlertBottom("Página não encontrada");
+                    },
                 }
+            }).done(function (response) {
+                myAlertTop(response.message);
+                updateListClient()
             }).fail(function (jqXHR, textStatus) {
-                console.log("Request failed: " + textStatus);
-
-            }).always(function () {
-                console.log("completou");
+                messageErroRequest(jqXHR, textStatus)
             });
         })
     } else {
         myAlertBottom("Selecione ao menos um número para ser removido.");
     }
 })
+
+function messageErroRequest(jqXHR, textStatus) {
+    if (!jqXHR.responseText) {
+        return textStatus ?? "N/A"
+    }
+    var text = JSON.parse(jqXHR.responseText)
+    if (!text) {
+        return jqXHR.response
+    }
+    if (!text.message) {
+        text = textStatus
+        myAlertBottom(text);
+        return
+    }
+    myAlertBottom(text.message);
+    console.log(text.message)
+}
 
 function editar() {
     checkbox = $(":checkbox:checked").not("input[name='first']").not("#darkModeSwitch")
