@@ -118,6 +118,19 @@ class numeroModel
         return true;
     }
 
+    function removeLink($nome)
+    {
+        if (empty($nome)) {
+            throw new dbTimeout("Informe um nome.");
+        }
+        $query = sprintf("DELETE FROM numeros WHERE name = %s", $this->instanceDatabase->real_escape_string($nome));
+        if (!$this->instanceDatabase->query($query)) {
+            throw new dbTimeout("Falha ao deletar o link " . $nome);
+        }
+
+        return true;
+    }
+
     function updateNumber($ID, $values)
     {
         $this->getInstance_selectDB();
@@ -159,7 +172,7 @@ class numeroModel
             array_push($listToSQL, $v);
         }
 
-        $query .= " WHERE ID=%s";
+        $query .= " WHERE name=%s";
         array_push($listToSQL, $name);
         $query = sprintf($query, ...$listToSQL);
         $this->instanceDatabase->query($query);
