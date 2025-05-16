@@ -215,13 +215,14 @@ class numeroModel
 
     public function insertNumber($data)
     {
-        if (is_null($data) || empty($data)) {
+        if (is_null($data) || empty($data || count($data) < 6)) {
             throw new dbTimeout("Dados passados como argumento são inválidos.");
         }
-        $result = $this->instanceDatabase->execute_query("INSERT INTO numeros (name, number, operator, server, stats, _date) VALUES(?, ?, ?, ?, ?, ?)", [$data["nome"], $data["numero"], $data["operator"], $data["server"], $data["status"], $data["data"]]);
+        $result = $this->instanceDatabase->execute_query("INSERT INTO numeros (name, number, operator, server, stats, _date) VALUES(?, ?, ?, ?, ?, ?)", [$data["nome"], $data["numero"], $data["operator"], $data["server"], $data["status"], $data["date"]]);
         if (!$result) {
             throw new dbTimeout("Falha ao adicionar número");
         }
+        return true;
     }
 
     public function insertLink($data)

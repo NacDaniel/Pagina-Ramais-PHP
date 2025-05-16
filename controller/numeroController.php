@@ -142,23 +142,84 @@ class numeroController
 
         if (isset($data["id"])) {
             if (!$this->updateNumberAndLink($data)) {
-                return;
+                throw new connectionTimeout("Ocorreu um número ao tentar atualizar esse cadastro.");
             }
             $this->returnJson(201, "Número atualizado com sucesso.");
             return;
         }
 
-        if ($this->insertNumberAndLink($data)) {
-            $this->returnJson(201, "Número inserido com sucesso.");
-        }
+
+        $returnListAdd = $this->insertNumberAndLink($data);
+        $this->returnJson(200, "Inserção realizada", $returnListAdd);
 
     }
 
 
     private function insertNumberAndLink($data)
     {
-
+        $numberList = explode(",", $data["numeros"]) ?? [];
+        unset($data["numeros"]);
+        if (count($numberList) <= 0) {
+            throw new connectionTimeout("Argumentos inválidos passados no campo \"Numero\".");
+        }
+        $numberListReturn = [
+            "success" => [],
+            "fail" => []
+        ];
+        foreach ($numberList as $index => $number) {
+        $numAtt = $number;
+            try {
+                if (strlen($number) < 3) {
+                    throw new connectionTimeout("Número deve possuir ao menos 3 digitos.");
+                }
+                $numbersSequence = $this->findSequencyNumInText($number);
+                foreach ($numbersSequence as $num) {
+                    $data["numero"] = $num;
+                    $numAtt = $num;
+                    if (count(numeroModel::getInstance()->getNumbers("WHERE number = " . $num)) != 0) {
+                        //   throw new connectionTimeout("Número já existente.");
+                    }
+                    if (!is_numeric($num)) {
+                        throw new connectionTimeout("Não é um número de telefone.");
+                    }
+                    if (strlen($num) > 20) {
+                        throw new connectionTimeout("Número maior que 20 carácteres.");
+                    }
+                    if (
+                        numeroModel::getInstance()->insertNumber([
+                            "nome" => $data["nome"],
+                            "operator" => $data["operator"],
+                            "server" => $data["server"],
+                            "status" => $data["status"],
+                            "date" => $data["date"],
+                            "numero" => $num,
+                        ])
+                    ) {
+                        array_push($numberListReturn["success"], $num);
+                    }
+                }
+            } catch (connectionTimeout $e) {
+                array_push($numberListReturn["fail"], $numAtt . " ('" . $e->getMessage() . "')");
+            }
+        }
+        return $numberListReturn;
     }
+
+    private function findSequencyNumInText($text)
+    {
+        if (!strpos($text, "-")) {
+            return [$text];
+        }
+        if (strpos($text, "-")+1 == strlen($text)) {
+            throw new connectionTimeout('Caráctere inválido no final do número.');
+        }
+        $listReturn = [];
+        list($start, $end) = explode("-", $text);
+        $range = range($start, $end);
+        return $range;
+    }
+
+
     private function updateNumberAndLink($data)
     {
         $numberOldData = numeroModel::getInstance()->getNumbers("WHERE ID = " . $data["id"]);
@@ -172,7 +233,7 @@ class numeroController
                 "nome" => (String) $data["nome"],
                 "operator" => (String) $data["operator"],
                 "server" => (String) $data["server"],
-                "stats" => (int) $data["status"],
+                "stats" => (int) $data["status"] ?? 5,
                 "date" => $data["date"]
             ])
         ) {

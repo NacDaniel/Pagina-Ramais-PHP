@@ -134,14 +134,20 @@ $("#salvar").on("click", function () {
         //data: "data=" + JSON.parse(listaToServer),
         data: 'data=' + JSON.stringify(listaToServer),
     }).done(function (resposta) {
-        if (resposta["code"] == 2002) {
-            exito = resposta.data.numerosExito
-            falha = resposta.data.numerosFalha
-            if (exito.length > 0) {
-                myAlertTop(exito.length + " números foram adicionados. " + exito.join(", "), 15)
-            }
-            if (falha.length > 0) {
-                myAlertBottom(exito.length + " números falharam. " + falha.join(", "), 15)
+        if (resposta.code == 200) {
+            console.log(resposta)
+            exito = resposta.success
+            falha = resposta.fail
+            if (exito.length > 0 || falha.length > 0) {
+                myAlertTop(resposta.message, 2)
+                if (exito.length > 0) {
+                    myAlertTop(exito.length + " números foram adicionados. " + exito.join(", "), 15)
+                }
+                if (falha.length > 0) {
+                    myAlertBottom(falha.length + " números falharam. " + falha.join(", "), 15)
+                }
+            } else {
+                myAlertBottom("Ocorreu um erro não identificado ao adicionar os números.", 15)
             }
             setTimeout(function () {
                 updateListClient()
