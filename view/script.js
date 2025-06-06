@@ -72,7 +72,7 @@ function adicionarLinha(data) {
             textURL = (text.search("http://") <= -1 && text.search("https://") <= -1) ? "http://" + text : text
             cell.innerHTML = '<a  target=_blank href="' + textURL + '"><th>' + textvisu + '</th></a>';
         } else if (listaLinks[text]) {
-            // verificar essa linha e acrescentar o http:// em todos os links. Esperar retorno do Charles sobre a VPN
+            // verificar essa linha e acrescentar o http:// em todos os links.
             textURL = (listaLinks[text].search("http://") <= -1 && listaLinks[text].search("https://") <= -1) ? "http://" + listaLinks[text] : listaLinks[text]
             cell.innerHTML = '<a target=_blank href="' + textURL + '"><th>' + text + '</th></a>';
         } else {
@@ -279,7 +279,6 @@ function messageErroRequest(jqXHR, textStatus) {
         return
     }
     myAlertBottom(text.message);
-    console.log(text.message)
 }
 
 function editar() {
@@ -435,4 +434,3 @@ function clickPage() {
     getPaginationAndData()
 }
 
-//updateListClient()

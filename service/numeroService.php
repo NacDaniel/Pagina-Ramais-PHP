@@ -183,43 +183,40 @@ class numeroService
         }
         $numberOldData = $numberOldData[0];
 
+        if (empty($numberOldData)) {
+            throw new connectionTimeout("Ocorreu um erro ao verificar se o número existe.");
+        }
+
         if (
             numeroModel::getInstance()->updateNumber($data["id"], [
-                "nome" => (String) $data["nome"],
+                "name" => (String) $data["nome"],
                 "operator" => (String) $data["operator"],
                 "server" => (String) $data["server"],
                 "stats" => (int) $data["status"] ?? 5,
-                "date" => $data["date"]
+                "_date" => $data["date"]
             ])
         ) {
-            $this->checkAndUpdateOrInsertLink($numberOldData["name"], $data["nome"], $data["contrato"]);
+            return $this->checkAndUpdateOrInsertLink($numberOldData["name"], $data["nome"], $data["contrato"]);
         }
     }
 
-    private function checkAndUpdateOrInsertLink($oldName, $newName, $contrato)
+    private function checkAndUpdateOrInsertLink($oldName, $newName, $contrato = "")
     {
-        if (numeroModel::getInstance()->getLinks("WHERE nome = " . $oldName . "" <= 0)) { // verifica se ainda existe algum número com o nome antigo
-            if (numeroModel::getInstance()->getLinks("WHERE nome = " . $oldName) <= 0) {
-                numeroModel::getInstance()->insertLink(["nome" => $newName, "link" => $contrato]);
+        $exitsNameOld = numeroModel::getInstance()->getNumbers("WHERE name = \"$oldName\"") > 0;
+        $exitsNameNew = numeroModel::getInstance()->getNumbers("WHERE name = \"$newName\"") > 0;
+        $exitsLinkByNameOld = numeroModel::getInstance()->getLinks("WHERE name = \"$oldName\"") > 0;
+
+        if ($exitsNameOld) {
+            if ($exitsLinkByNameOld) {
+                numeroModel::getInstance()->insertLink(["name" => $newName, "link" => $contrato]);
                 return true;
             }
-            // existe link com o nome antigo = Atualiza
-            numeroModel::getInstance()->updateLink($oldName, ["name" => $oldName, "link" => $contrato]);
-            return true;
+        } else {
+            if (numeroModel::getInstance()->updateLink($oldName, ["name" => $newName, "link" => $contrato])) {
+                numeroModel::getInstance()->insertLink(["name" => $newName, "link" => $contrato]);
+            }
         }
 
-        $linkNew = numeroModel::getInstance()->getLinks("WHERE nome = " . $newName); // busca por links com o mesmo identificador do nome novo
-        if (!(count($linkNew) != 0 && $linkNew[0]["link"] != $contrato)) { // verifica se o link encontrado é diferente do link de contrato
-            numeroModel::getInstance()->updateLink($newName, ["link" => $contrato]);
-            return true;
-        }
-
-        numeroModel::getInstance()->insertLink([
-            "nome" => $newName,
-            "link" => $contrato
-        ]);
-
-        return true;
     }
 
     public function checkDeleteNumber($ID)
@@ -228,7 +225,7 @@ class numeroService
             throw new connectionTimeout("Informe um ID");
         }
 
-        $numero = numeroModel::getInstance()->getNumbers($ID);
+        $numero = numeroModel::getInstance()->getNumbers("WHERE number = $ID");
 
         if (count($numero) == 0) {
             throw new connectionTimeout("Número não encontrado.");

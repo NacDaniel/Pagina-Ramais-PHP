@@ -1,6 +1,11 @@
 <?php
 
 namespace Model;
+
+use Exception;
+use mysqli;
+use mysqli_sql_exception;
+use View\indexView;
 require dirname(__FILE__, 2) . "/exceptions/database/connectionTimeout.php";
 use Exceptions\database\connectionTimeout as dbTimeout;
 
@@ -11,7 +16,7 @@ $passDatabase = getenv('mysql_password');
 
 // Classe criada para simular o construtor, atributos e todo o resto do mysqli.
 // Não tenho o mysqli :/
-class mysqli
+class mysqli___
 {
     public $affected_rows = 1;
     public $error;
@@ -83,10 +88,17 @@ class numeroModel
         global $hostDatabase;
         global $userDatabase;
         global $passDatabase;
-        $this->instanceDatabase = new mysqli($hostDatabase, $userDatabase, $passDatabase);
-        if ($this->instanceDatabase->error) {
-            $this->instanceDatabase = null;
-            throw new dbTimeout("Falha ao conectar no banco de dados. Por favor, contate o administrador e o peça para verificar a instância do banco de dados.");
+
+        try {
+            $this->instanceDatabase = mysqli_init();
+            $this->instanceDatabase->options(MYSQLI_OPT_CONNECT_TIMEOUT, value: 2);
+            if (!$this->instanceDatabase->real_connect($hostDatabase, $userDatabase, $passDatabase, 'my_database')) {
+                $this->instanceDatabase = null;
+                throw new dbTimeout("Falha ao conectar no banco de dados. Por favor, contate o administrador e o peça para verificar a instância do banco de dados.");
+            }
+        } catch (\Exception $e) {
+            //throw new dbTimeout("Falha ao conectar no banco de dados. Por favor, contate o administrador e o peça para verificar a instância do banco de dados.");
+            throw new dbTimeout($e->getMessage());
         }
 
     }
@@ -142,11 +154,11 @@ class numeroModel
             if ($i - 1 != count($values) && $i != 1) {
                 $query .= ", ";
             }
-            $query .= "$k = %s";
+            $query .= "$k = \"%s\"";
             array_push($listToSQL, $v);
         }
 
-        $query .= " WHERE ID=%s";
+        $query .= " WHERE ID=\"%s\"";
         array_push($listToSQL, $ID);
         $query = sprintf($query, ...$listToSQL);
         $this->instanceDatabase->query($query);
@@ -168,11 +180,11 @@ class numeroModel
             if ($i - 1 != count($values) && $i != 1) {
                 $query .= ", ";
             }
-            $query .= "$k = %s";
+            $query .= "$k = \"%s\"";
             array_push($listToSQL, $v);
         }
 
-        $query .= " WHERE name=%s";
+        $query .= " WHERE name=\"%s\"";
         array_push($listToSQL, $name);
         $query = sprintf($query, ...$listToSQL);
         $this->instanceDatabase->query($query);
@@ -243,7 +255,7 @@ class numeroModel
         if (is_null($data) || empty($data)) {
             throw new dbTimeout("Dados passados como argumento são inválidos.");
         }
-        $result = $this->instanceDatabase->execute_query("INSERT INTO links (name, link) VALUES(?, ?)", [$data["nome"], (string) $data["link"]]);
+        $result = $this->instanceDatabase->execute_query("INSERT INTO links (name, link) VALUES(?, ?)", [$data["name"], (string) $data["link"]]);
         if (!$result) {
             throw new dbTimeout("Falha ao adicionar número");
         }
@@ -273,12 +285,39 @@ class numeroModel
         if ($where != "") {
             $query .= " " . $where;
         }
-        if (!$this->instanceDatabase->query($query)) {
+        $query = $this->instanceDatabase->query($query);
+        if (!$query) {
             throw new dbTimeout("Falha ao obter os números cadastrados.");
         }
-        return [["id" => 1, "number" => 1234, "name" => "aaa"]];
+        return $this->iterateNumbers($query);
     }
 
+    private function iterateNumbers($data)
+    {
+        $dataReturn = [];
+        while ($row = mysqli_fetch_array($data)) {
+            array_unshift($dataReturn, [
+                "ID" => $row["ID"],
+                "name" => $row["name"],
+                "number" => $row["number"],
+                "operator" => $row["operator"],
+                "server" => $row["server"],
+                "stats" => $row["stats"],
+                "date" => date_format(date_create($row["_date"]), "d/m/Y"),
+
+            ]);
+        }
+        return $dataReturn;
+    }
+
+    private function iterateLinks($data)
+    {
+        $dataReturn = [];
+        while ($row = mysqli_fetch_array($data)) {
+            $dataReturn[$row["name"]] = $row["link"];
+        }
+        return $dataReturn;
+    }
 
     public function getLinks($where = "")
     {
@@ -286,11 +325,15 @@ class numeroModel
         if ($where != "") {
             $query .= " " . $where;
         }
-        if (!$this->instanceDatabase->query($query)) {
-            throw new dbTimeout("Falha ao obter os links cadastrados.");
+        //throw new dbTimeout($query);
+
+        $query = $this->instanceDatabase->query($query);
+        if (!$query) {
+            throw new dbTimeout("Falha ao obter os números cadastrados.");
         }
-        return [["nome" => "Daniel Teste", "link" => "aaa"]];
+        return $this->iterateLinks($query);
     }
+
 
     private function replace_list($name, $array)
     {

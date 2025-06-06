@@ -1,6 +1,8 @@
 <?php
 
 namespace Controller;
+
+use Exception;
 require dirname(__FILE__, 2) . "/view/indexView.php";
 require dirname(__FILE__, 2) . "/service/numeroService.php";
 use Model\numeroModel;
@@ -34,37 +36,12 @@ class numeroController
         try {
             numeroModel::getInstance()->init_database();
             numeroModel::getInstance()->create_databases();
-            //$index->setListNumbers(indexView::getInstance()->getLinks(), indexView::getInstance()->getNumbers());
-            indexView::getInstance()->setListNumbers(
-                [
-                    "AMERICANET" => "192.168.1.1",
-                    "Daniel Teste" => "192.168.1.1",
-                ],
-                [
-                    [
-                        "ID" => 1,
-                        "name" => "Daniel Teste",
-                        "number" => "40028922",
-                        "operator" => "AMERICANET",
-                        "server" => "192.168.1.1",
-                        "stats" => 1,
-                        "date" => date_format(date_create("04/29/2025"), "d/m/Y"),
-                    ],
-                    [
-                        "ID" => 2,
-                        "name" => "Daniel Teste2",
-                        "number" => "40028922",
-                        "operator" => "AMERICANET",
-                        "server" => "192.168.1.1",
-                        "stats" => 1,
-                        "date" => date_format(date_create("04/29/2025"), "d/m/Y"),
-                    ]
-                ]
-            );
+            indexView::getInstance()->setListNumbers(numeroModel::getInstance()->getNumbers());
+            indexView::getInstance()->setListLinks(numeroModel::getInstance()->getLinks());
         } catch (connectionTimeout $e) {
-            $this->returnJson(404, $e->getMessage());
+            indexView::getInstance()->insertErrorMessageInScreen($e->getMessage(), 30);
         } finally {
-            // indexView::getInstance()->close();
+            numeroModel::getInstance()->close_database();
         }
     }
 
@@ -82,6 +59,7 @@ class numeroController
                 $data = numeroService::getInstance()->upgradeDataBefereUpdateOrInsert($data);
                 if (array_key_exists("id", $data)) {
                     if (!numeroService::getInstance()->checkUpdateNumber($data)) {
+                        $this->returnJson(201, "Falha ao atualizar esse número.");
                         return;
                     }
                     $this->returnJson(201, "Número atualizado com sucesso.");
@@ -120,4 +98,3 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     numeroController::getInstance()->request_get("/");
     return;
 }
-
