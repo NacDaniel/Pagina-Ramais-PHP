@@ -146,8 +146,8 @@ class numeroService
                 foreach ($numbersSequence as $num) {
                     $data["numero"] = $num;
                     $numAtt = $num;
-                    if (count(numeroModel::getInstance()->getNumbers("WHERE number = " . $num)) != 0) {
-                        //     throw new connectionTimeout("Número já existente.");
+                    if (count(numeroModel::getInstance()->getNumbers("WHERE number = \"$num\"")) != 0) {
+                        throw new connectionTimeout("Número já existente.");
                     }
                     if (!is_numeric($num)) {
                         throw new connectionTimeout("Não é um número de telefone.");
