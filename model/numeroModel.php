@@ -158,7 +158,7 @@ class numeroModel
             array_push($listToSQL, $v);
         }
 
-        $query .= " WHERE ID=\"%s\"";
+        $query .= " WHERE ID=%s";
         array_push($listToSQL, $ID);
         $query = sprintf($query, ...$listToSQL);
         $this->instanceDatabase->query($query);

@@ -28,7 +28,7 @@ class numeroService
         if (strlen($text) <= 0) {
             return;
         }
-        if (str_contains($text, "http://") && str_contains($text, "https://")) {
+        if (str_contains($text, "http://") || str_contains($text, "https://")) {
             return;
         }
         return "http://" . $text;
