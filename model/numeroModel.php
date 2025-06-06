@@ -14,42 +14,6 @@ $hostDatabase = getenv('mysql_host');
 $userDatabase = getenv('mysql_user');
 $passDatabase = getenv('mysql_password');
 
-// Classe criada para simular o construtor, atributos e todo o resto do mysqli.
-// Não tenho o mysqli :/
-class mysqli___
-{
-    public $affected_rows = 1;
-    public $error;
-    public function __construct($host, $user, $password)
-    {
-    }
-    public function select_db($databaseName)
-    {
-        return true;
-    }
-    public function query($query)
-    {
-        return true;
-    }
-
-    public function execute_query($query, $args = null)
-    {
-        return true;
-    }
-
-    public function real_escape_string($string)
-    {
-        return $string;
-    }
-
-    public function close()
-    {
-        return;
-    }
-}
-
-/*Não esquecer de deletar a classe mysqli*/
-
 class numeroModel
 {
 
