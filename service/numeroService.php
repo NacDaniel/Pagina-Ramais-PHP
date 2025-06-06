@@ -225,7 +225,7 @@ class numeroService
             throw new connectionTimeout("Informe um ID");
         }
 
-        $numero = numeroModel::getInstance()->getNumbers("WHERE number = $ID");
+        $numero = numeroModel::getInstance()->getNumbers("WHERE ID = $ID");
 
         if (count($numero) == 0) {
             throw new connectionTimeout("Número não encontrado.");
@@ -242,7 +242,7 @@ class numeroService
 
     private function checkOthersNumbersAndDeleteLink($nome)
     {
-        $numeros = numeroModel::getInstance()->getNumbers("WHERE nome = " . $nome);
+        $numeros = numeroModel::getInstance()->getNumbers("WHERE name = \"$nome\"");
         if (!(count($numeros) != 0)) {
             numeroModel::getInstance()->removeLink($nome);
         }
