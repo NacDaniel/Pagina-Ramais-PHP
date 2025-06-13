@@ -44,7 +44,7 @@ class numeroModel
 
     public function close_database()
     {
-
+        $this->instanceDatabase->close();
     }
 
     public function init_database()
@@ -55,12 +55,12 @@ class numeroModel
 
         try {
             $this->instanceDatabase = mysqli_init();
-            $this->instanceDatabase->options(MYSQLI_OPT_CONNECT_TIMEOUT, value: 2);
+            $this->instanceDatabase->options(MYSQLI_OPT_CONNECT_TIMEOUT, 5);
             if (!$this->instanceDatabase->real_connect($hostDatabase, $userDatabase, $passDatabase, 'my_database')) {
                 $this->instanceDatabase = null;
                 throw new dbTimeout("Falha ao conectar no banco de dados. Por favor, contate o administrador e o peça para verificar a instância do banco de dados.");
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             //throw new dbTimeout("Falha ao conectar no banco de dados. Por favor, contate o administrador e o peça para verificar a instância do banco de dados.");
             throw new dbTimeout($e->getMessage());
         }
@@ -86,7 +86,7 @@ class numeroModel
         if (empty($ID)) {
             throw new dbTimeout("Informe um ID.");
         }
-        $query = sprintf("DELETE FROM numeros WHERE ID = %s", $this->instanceDatabase->real_escape_string($ID));
+        $query = "DELETE FROM numeros WHERE ID = $ID";
         if (!$this->instanceDatabase->query($query)) {
             throw new dbTimeout("Falha ao deletar o ID $ID");
         }
@@ -119,7 +119,7 @@ class numeroModel
                 $query .= ", ";
             }
             $query .= "$k = \"%s\"";
-            array_push($listToSQL, $v);
+            array_push($listToSQL, is_numeric($v) ? $v : $this->instanceDatabase->real_escape_string($v));
         }
 
         $query .= " WHERE ID=%s";
@@ -145,11 +145,11 @@ class numeroModel
                 $query .= ", ";
             }
             $query .= "$k = \"%s\"";
-            array_push($listToSQL, $v);
+            array_push($listToSQL, $this->instanceDatabase->real_escape_string($v));
         }
 
         $query .= " WHERE name=\"%s\"";
-        array_push($listToSQL, $name);
+        array_push($listToSQL, $this->instanceDatabase->real_escape_string($name));
         $query = sprintf($query, ...$listToSQL);
         $this->instanceDatabase->query($query);
         if ($this->instanceDatabase->affected_rows < 1) {
@@ -207,7 +207,15 @@ class numeroModel
         if (is_null($data) || empty($data || count($data) < 6)) {
             throw new dbTimeout("Dados passados como argumento são inválidos.");
         }
-        $result = $this->instanceDatabase->execute_query("INSERT INTO numeros (name, number, operator, server, stats, _date) VALUES(?, ?, ?, ?, ?, ?)", [$data["nome"], $data["numero"], $data["operator"], $data["server"], $data["status"], $data["date"]]);
+        $dataToInsert = [
+            $this->instanceDatabase->real_escape_string($data["nome"]),
+            $data["numero"],
+            $this->instanceDatabase->real_escape_string($data["operator"]),
+            $this->instanceDatabase->real_escape_string($data["server"]),
+            $data["status"],
+            $data["date"]
+        ];
+        $result = $this->instanceDatabase->execute_query("INSERT INTO numeros (name, number, operator, server, stats, _date) VALUES(?, ?, ?, ?, ?, ?)", $dataToInsert);
         if (!$result) {
             throw new dbTimeout("Falha ao adicionar número");
         }
@@ -219,7 +227,7 @@ class numeroModel
         if (is_null($data) || empty($data)) {
             throw new dbTimeout("Dados passados como argumento são inválidos.");
         }
-        $result = $this->instanceDatabase->execute_query("INSERT INTO links (name, link) VALUES(?, ?)", [$data["name"], (string) $data["link"]]);
+        $result = $this->instanceDatabase->execute_query("INSERT INTO links (name, link) VALUES(?, ?)", [$this->instanceDatabase->real_escape_string($data["name"]), $this->instanceDatabase->real_escape_string(($data["link"]))]);
         if (!$result) {
             throw new dbTimeout("Falha ao adicionar número");
         }
